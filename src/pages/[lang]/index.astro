@@ -1,19 +1,31 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import ThemeToggle from '../components/ThemeToggle.astro';
-import LanguageSwitcher from '../components/LanguageSwitcher.astro';
-import NewsBoard from '../components/NewsBoard.astro';
-import { runNewsPipeline } from '../news/pipeline';
-import { getNewsSources } from '../news/sources';
-import { getUiText } from '../i18n';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ThemeToggle from '../../components/ThemeToggle.astro';
+import LanguageSwitcher from '../../components/LanguageSwitcher.astro';
+import NewsBoard from '../../components/NewsBoard.astro';
+import { runNewsPipeline } from '../../news/pipeline';
+import { getNewsSources } from '../../news/sources';
+import { LOCALES, type Locale, getUiText, isLocale, localePrefix } from '../../i18n';
 
-const locale = 'ru';
+export function getStaticPaths() {
+  return LOCALES.filter((locale) => locale !== 'ru').map((locale) => ({
+    params: { lang: locale },
+    props: { locale }
+  }));
+}
+
+const { locale } = Astro.props as { locale: Locale };
+
+if (!isLocale(locale) || locale === 'ru') {
+  throw new Error('Unsupported locale route');
+}
+
 const t = getUiText(locale);
-
+const prefix = localePrefix(locale);
 const availableSources = getNewsSources(undefined, locale);
 const pipeline = await runNewsPipeline({ limit: 40, locale });
 const navLinks = [
-  { label: t.navHome, href: '/' },
+  { label: t.navHome, href: `${prefix || '/'}` },
   { label: t.navCategories, href: '#' },
   { label: t.navAbout, href: '#' },
   { label: t.navContact, href: '#' }

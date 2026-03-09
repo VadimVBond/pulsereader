@@ -1,42 +1,69 @@
+import type { Locale } from '../i18n';
+
 export interface NewsSource {
   id: string;
   name: string;
   url: string;
   category: string;
+  locales: Locale[];
 }
 
 export const NEWS_SOURCES: NewsSource[] = [
   {
-    id: 'bbc-world',
-    name: 'BBC World',
-    url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
-    category: 'World'
+    id: 'korrespondent',
+    name: 'Korrespondent',
+    url: 'https://korrespondent.net/rss_subscription/',
+    category: 'News',
+    locales: ['uk', 'ru']
   },
   {
-    id: 'reuters-world',
-    name: 'Reuters World',
-    url: 'https://feeds.reuters.com/Reuters/worldNews',
-    category: 'World'
+    id: 'techcrunch',
+    name: 'TechCrunch',
+    url: 'https://techcrunch.com/feed/',
+    category: 'Technology',
+    locales: ['en', 'uk', 'ru']
   },
   {
-    id: 'nyt-world',
-    name: 'NYT World',
-    url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
-    category: 'World'
+    id: 'the-verge',
+    name: 'The Verge',
+    url: 'https://www.theverge.com/rss/index.xml',
+    category: 'Technology',
+    locales: ['en', 'uk', 'ru']
   },
   {
-    id: 'hn-frontpage',
+    id: 'arstechnica',
+    name: 'Ars Technica',
+    url: 'https://feeds.arstechnica.com/arstechnica/index',
+    category: 'Technology',
+    locales: ['en', 'uk', 'ru']
+  },
+  {
+    id: 'hacker-news',
     name: 'Hacker News',
     url: 'https://hnrss.org/frontpage',
-    category: 'Technology'
+    category: 'Technology',
+    locales: ['en', 'uk', 'ru']
+  },
+  {
+    id: 'github-blog',
+    name: 'GitHub Blog',
+    url: 'https://github.blog/feed/',
+    category: 'Technology',
+    locales: ['en', 'uk', 'ru']
   }
 ];
 
-export function getNewsSources(selectedIds?: string[]): NewsSource[] {
-  if (!selectedIds || selectedIds.length === 0) {
+export function getNewsSources(selectedIds?: string[], locale: Locale = 'ru'): NewsSource[] {
+  const base = NEWS_SOURCES.filter((source) => source.locales.includes(locale));
+
+  if (base.length === 0) {
     return NEWS_SOURCES;
   }
 
+  if (!selectedIds || selectedIds.length === 0) {
+    return base;
+  }
+
   const selected = new Set(selectedIds);
-  return NEWS_SOURCES.filter((source) => selected.has(source.id));
+  return base.filter((source) => selected.has(source.id));
 }

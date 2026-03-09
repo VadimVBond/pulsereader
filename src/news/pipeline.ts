@@ -1,3 +1,4 @@
+import type { Locale } from '../i18n';
 import { dedupeArticles } from './dedupe';
 import { fetchFeeds } from './fetcher';
 import { parseFeed } from './parser';
@@ -28,6 +29,7 @@ export interface PipelineOptions {
   sourceIds?: string[];
   limit?: number;
   timeoutMs?: number;
+  locale?: Locale;
 }
 
 function shortHash(input: string): string {
@@ -94,7 +96,8 @@ function toPipelineArticle(parsed: ReturnType<typeof parseFeed>[number]): Pipeli
 }
 
 export async function runNewsPipeline(options: PipelineOptions = {}): Promise<PipelineResult> {
-  const selectedSources = getNewsSources(options.sourceIds);
+  const locale = options.locale ?? 'ru';
+  const selectedSources = getNewsSources(options.sourceIds, locale);
   const feedResults = await fetchFeeds(selectedSources, {
     timeoutMs: options.timeoutMs
   });

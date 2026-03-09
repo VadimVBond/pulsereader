@@ -1,0 +1,66 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ThemeToggle from '../../../components/ThemeToggle.astro';
+import LanguageSwitcher from '../../../components/LanguageSwitcher.astro';
+import NewsBoard from '../../../components/NewsBoard.astro';
+import { runNewsPipeline } from '../../../news/pipeline';
+import { getNewsSources } from '../../../news/sources';
+import { LOCALES, type Locale, getUiText, isLocale, localePrefix } from '../../../i18n';
+
+export function getStaticPaths() {
+  const langs = LOCALES.filter((locale) => locale !== 'ru');
+
+  return langs.flatMap((locale) =>
+    getNewsSources(undefined, locale).map((source) => ({
+      params: { lang: locale, id: source.id },
+      props: { locale, sourceId: source.id, sourceName: source.name }
+    }))
+  );
+}
+
+const { locale, sourceId, sourceName } = Astro.props as {
+  locale: Locale;
+  sourceId: string;
+  sourceName: string;
+};
+
+if (!isLocale(locale) || locale === 'ru') {
+  throw new Error('Unsupported locale route');
+}
+
+const prefix = localePrefix(locale);
+const t = getUiText(locale);
+const availableSources = getNewsSources(undefined, locale);
+const pipeline = await runNewsPipeline({ sourceIds: [sourceId], limit: 40, locale });
+const navLinks = [
+  { label: t.navHome, href: `${prefix || '/'}` },
+  { label: t.navCategories, href: '#' },
+  { label: t.navAbout, href: '#' },
+  { label: t.navContact, href: '#' }
+];
+---
+
+<BaseLayout title={`PulseReader | ${sourceName}`} description={`News from ${sourceName}`} lang={locale} navLinks={navLinks}>
+  <Fragment slot='header-actions'>
+    <LanguageSwitcher locale={locale} path={Astro.url.pathname} />
+    <button class='search-icon' type='button' aria-label='Search'>
+      <span aria-hidden='true'>⌕</span>
+    </button>
+    <ThemeToggle />
+  </Fragment>
+
+  <NewsBoard pipeline={pipeline} sources={availableSources} selectedSourceId={sourceId} locale={locale} />
+</BaseLayout>
+
+<style>
+  .search-icon {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+</style>
+

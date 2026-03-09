@@ -1,26 +1,38 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import ThemeToggle from '../../components/ThemeToggle.astro';
-import LanguageSwitcher from '../../components/LanguageSwitcher.astro';
-import { runNewsPipeline, type PipelineArticle } from '../../news/pipeline';
-import { getUiText } from '../../i18n';
-
-const locale = 'ru';
-const t = getUiText(locale);
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ThemeToggle from '../../../components/ThemeToggle.astro';
+import LanguageSwitcher from '../../../components/LanguageSwitcher.astro';
+import { runNewsPipeline, type PipelineArticle } from '../../../news/pipeline';
+import { LOCALES, type Locale, getUiText, isLocale, localePrefix } from '../../../i18n';
 
 export async function getStaticPaths() {
-  const result = await runNewsPipeline({ limit: 120, locale: 'ru' });
+  const langs = LOCALES.filter((locale) => locale !== 'ru');
+  const paths = [] as Array<{ params: { lang: string; slug: string }; props: { locale: Locale; article: PipelineArticle } }>;
 
-  return result.articles.map((article) => ({
-    params: { slug: article.slug },
-    props: { article }
-  }));
+  for (const locale of langs) {
+    const result = await runNewsPipeline({ limit: 120, locale });
+    for (const article of result.articles) {
+      paths.push({
+        params: { lang: locale, slug: article.slug },
+        props: { locale, article }
+      });
+    }
+  }
+
+  return paths;
 }
 
-const { article } = Astro.props as { article: PipelineArticle };
+const { locale, article } = Astro.props as { locale: Locale; article: PipelineArticle };
 
+if (!isLocale(locale) || locale === 'ru') {
+  throw new Error('Unsupported locale route');
+}
+
+const t = getUiText(locale);
+const prefix = localePrefix(locale);
+const localeTag = locale === 'en' ? 'en-US' : 'uk-UA';
 const publishedAt = article.publishedAt
-  ? article.publishedAt.toLocaleDateString('ru-RU', {
+  ? article.publishedAt.toLocaleDateString(localeTag, {
       day: '2-digit',
       month: 'long',
       year: 'numeric'
@@ -28,7 +40,7 @@ const publishedAt = article.publishedAt
   : null;
 
 const navLinks = [
-  { label: t.navHome, href: '/' },
+  { label: t.navHome, href: `${prefix || '/'}` },
   { label: t.navCategories, href: '#' },
   { label: t.navAbout, href: '#' },
   { label: t.navContact, href: '#' }
@@ -58,7 +70,7 @@ const navLinks = [
     </section>
 
     <p class='article-back'>
-      <a href='/'>{t.backHome}</a>
+      <a href={`${prefix || '/'}`}>{t.backHome}</a>
     </p>
   </article>
 </BaseLayout>

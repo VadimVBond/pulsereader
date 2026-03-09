@@ -35,7 +35,9 @@ const {
     </ul>
   </nav>
 
-  <slot name='actions' />
+  <div class='actions'>
+    <slot name='actions' />
+  </div>
 </header>
 
 <style>
@@ -76,13 +78,21 @@ const {
     color: var(--text-primary);
   }
 
+  .actions {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
   @media (max-width: 720px) {
     .header {
       grid-template-columns: 1fr;
       justify-items: start;
     }
 
-    nav {
+    nav,
+    .actions {
       justify-self: start;
     }
 

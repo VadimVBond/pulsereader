@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="ru" data-astro-cid-37fxchfa> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>PulseReader | Fixfest is a global gathering of repairers, tinkerers, and activists</title><meta name="description" content="Article URL: https://fixfest.therestartproject.org/ Comments URL: https://news.ycombinator.com/item?id=47312329 Points: 106 # Comments: 9"><meta name="robots" content="index, follow"><link rel="canonical" href="https://example.com/article/fixfest-is-a-global-gathering-of-repairers-tinkerers-and-activists-vtw5uu/"><meta property="og:type" content="website"><meta property="og:title" content="PulseReader | Fixfest is a global gathering of repairers, tinkerers, and activists"><meta property="og:description" content="Article URL: https://fixfest.therestartproject.org/ Comments URL: https://news.ycombinator.com/item?id=47312329 Points: 106 # Comments: 9"><meta property="og:url" content="https://example.com/article/fixfest-is-a-global-gathering-of-repairers-tinkerers-and-activists-vtw5uu/"><meta property="og:image" content="https://example.com/images/og-default.svg"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="PulseReader | Fixfest is a global gathering of repairers, tinkerers, and activists"><meta name="twitter:description" content="Article URL: https://fixfest.therestartproject.org/ Comments URL: https://news.ycombinator.com/item?id=47312329 Points: 106 # Comments: 9"><meta name="twitter:image" content="https://example.com/images/og-default.svg"><link rel="stylesheet" href="/_astro/_slug_.DbrzJ_c7.css">
+<style>.article-page[data-astro-cid-yvq5cjnk]{display:grid;gap:1rem}.article-head[data-astro-cid-yvq5cjnk] h1[data-astro-cid-yvq5cjnk]{margin:0;font-size:clamp(1.7rem,2.8vw,2.2rem)}.article-kicker[data-astro-cid-yvq5cjnk]{margin:0;color:var(--text-muted);font-size:.9rem;letter-spacing:.04em;text-transform:uppercase}.article-date[data-astro-cid-yvq5cjnk]{margin:.5rem 0 0;color:var(--text-muted);font-size:.88rem}.article-excerpt[data-astro-cid-yvq5cjnk]{margin:.4rem 0 0;color:var(--text-muted)}.article-body[data-astro-cid-yvq5cjnk] p[data-astro-cid-yvq5cjnk]{margin:0 0 1rem;line-height:1.75}.article-body[data-astro-cid-yvq5cjnk] a[data-astro-cid-yvq5cjnk]{color:var(--primary);text-decoration:none}.article-body[data-astro-cid-yvq5cjnk] a[data-astro-cid-yvq5cjnk]:hover{text-decoration:underline}.article-back[data-astro-cid-yvq5cjnk]{margin:.75rem 0 0}.article-back[data-astro-cid-yvq5cjnk] a[data-astro-cid-yvq5cjnk]{color:var(--primary);text-decoration:none}.article-back[data-astro-cid-yvq5cjnk] a[data-astro-cid-yvq5cjnk]:hover{text-decoration:underline}
+</style></head> <body data-astro-cid-37fxchfa> <div data-astro-cid-d6puh33w class="container-base container-md"> <header class="header" data-astro-cid-3ef6ksr2> <a class="brand" href="/" data-astro-cid-3ef6ksr2>PulseReader</a> <nav aria-label="Main navigation" data-astro-cid-3ef6ksr2> <ul class="nav-list" data-astro-cid-3ef6ksr2> <li data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2>Home</a> </li><li data-astro-cid-3ef6ksr2> <a href="#" data-astro-cid-3ef6ksr2>Categories</a> </li><li data-astro-cid-3ef6ksr2> <a href="#" data-astro-cid-3ef6ksr2>About</a> </li><li data-astro-cid-3ef6ksr2> <a href="#" data-astro-cid-3ef6ksr2>Contact</a> </li> </ul> </nav> <div class="actions" data-astro-cid-3ef6ksr2>  <button type="button" class="theme-toggle" aria-label="Toggle theme" data-theme-toggle data-storage-key="theme" data-astro-cid-x3pjskd3> <span data-theme-icon aria-hidden="true" data-astro-cid-x3pjskd3>◐</span> <span data-theme-label data-astro-cid-x3pjskd3>Theme</span> </button> <script>
+  const getPreferredTheme = () => {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  };
+
+  const applyTheme = (theme) => {
+    document.documentElement.dataset.theme = theme;
+  };
+
+  const setupToggle = (button) => {
+    const storageKey = button.dataset.storageKey || 'theme';
+    const savedTheme = window.localStorage.getItem(storageKey);
+    const initialTheme = savedTheme || getPreferredTheme();
+
+    applyTheme(initialTheme);
+
+    const setLabel = (theme) => {
+      const nextTheme = theme === 'dark' ? 'light' : 'dark';
+      const label = nextTheme === 'dark' ? 'Dark' : 'Light';
+      const textNode = button.querySelector('[data-theme-label]');
+      if (textNode) {
+        textNode.textContent = label;
+      }
+      button.setAttribute('aria-pressed', String(theme === 'dark'));
+      button.setAttribute('title', `Switch to ${nextTheme} theme`);
+    };
+
+    setLabel(initialTheme);
+
+    button.addEventListener('click', () => {
+      const currentTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+      applyTheme(nextTheme);
+      window.localStorage.setItem(storageKey, nextTheme);
+      setLabel(nextTheme);
+    });
+  };
+
+  document.querySelectorAll('[data-theme-toggle]').forEach(setupToggle);
+</script>   </div> </header> <main data-astro-cid-37fxchfa>  <article class="article-page" data-astro-cid-yvq5cjnk> <header class="article-head" data-astro-cid-yvq5cjnk> <p class="article-kicker" data-astro-cid-yvq5cjnk>Hacker News</p> <h1 data-astro-cid-yvq5cjnk>Fixfest is a global gathering of repairers, tinkerers, and activists</h1> <p class="article-date" data-astro-cid-yvq5cjnk>09 марта 2026 г.</p> <p class="article-excerpt" data-astro-cid-yvq5cjnk>Article URL: https://fixfest.therestartproject.org/ Comments URL: https://news.ycombinator.com/item?id=47312329 Points: 106 # Comments: 9</p> </header> <section class="article-body" data-astro-cid-yvq5cjnk> <p data-astro-cid-yvq5cjnk>Article URL: https://fixfest.therestartproject.org/ Comments URL: https://news.ycombinator.com/item?id=47312329 Points: 106 # Comments: 9</p> <p data-astro-cid-yvq5cjnk>
+This article was aggregated from an external RSS source. Open the original page for full content and context.
+</p> <p data-astro-cid-yvq5cjnk> <a href="https://fixfest.therestartproject.org/" target="_blank" rel="noopener noreferrer" data-astro-cid-yvq5cjnk>Read original article</a> </p> </section> <p class="article-back" data-astro-cid-yvq5cjnk> <a href="/" data-astro-cid-yvq5cjnk>Back to home</a> </p> </article>  </main> <footer class="footer" data-astro-cid-sz7xmlte> <p data-astro-cid-sz7xmlte>© 2026 PulseReader. All rights reserved.</p>  </footer>  </div>  </body></html> 

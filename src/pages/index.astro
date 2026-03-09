@@ -1,3 +1,284 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import { runNewsPipeline } from '../news/pipeline';
+import { NEWS_SOURCES } from '../news/sources';
+
+const selectedSourceId = Astro.url.searchParams.get('source');
+
+const pipeline = await runNewsPipeline({
+  sourceIds: selectedSourceId ? [selectedSourceId] : undefined,
+  limit: 40
+});
+
+const articles = pipeline.articles;
+const trending = articles.slice(0, 3);
+const moreStories = articles.slice(3, 11);
+
+const formatDate = (value?: Date) =>
+  value ? value.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' }) : undefined;
+
+const hasNews = articles.length > 0;
 ---
-<h1>Главная страница</h1>
+
+<BaseLayout title='PulseReader | Home' description='PulseReader article feed'>
+  <Fragment slot='header-actions'>
+    <button class='search-icon' type='button' aria-label='Search'>
+      <span aria-hidden='true'>⌕</span>
+    </button>
+    <ThemeToggle />
+  </Fragment>
+
+  <div class='page-shell'>
+    <section class='search-panel' aria-label='Source filters'>
+      <input type='search' placeholder='Search articles...' aria-label='Search articles' />
+
+      <div class='search-toolbar'>
+        <div class='chips'>
+          <a class:list={['chip', { active: !selectedSourceId }]} href='/'>All sources</a>
+          {
+            NEWS_SOURCES.map((source) => (
+              <a
+                class:list={['chip', { active: selectedSourceId === source.id }]}
+                href={`/?source=${source.id}`}
+              >
+                {source.name}
+              </a>
+            ))
+          }
+        </div>
+        <button type='button' class='search-btn'>Search</button>
+      </div>
+    </section>
+
+    <section class='stats-row' aria-label='Stats'>
+      <article class='stat-card'><strong>{pipeline.totalUnique}</strong><span>articles found</span></article>
+      <article class='stat-card'><strong>{pipeline.sources.length}</strong><span>sources used</span></article>
+      <article class='stat-card'><strong>{pipeline.totalParsed - pipeline.totalUnique}</strong><span>duplicates removed</span></article>
+    </section>
+
+    {
+      !hasNews && (
+        <section class='empty-state'>
+          <h2>No RSS articles available right now</h2>
+          <p>Try another source or refresh later.</p>
+        </section>
+      )
+    }
+
+    {
+      hasNews && (
+        <>
+          <section class='section-block'>
+            <h2>Trending Articles</h2>
+            <div class='trending-grid'>
+              {
+                trending.map((article) => (
+                  <ArticleCard
+                    title={article.title}
+                    excerpt={article.excerpt}
+                    href={`/article/${article.slug}`}
+                    linkLabel='Read article'
+                    publishedAt={formatDate(article.publishedAt)}
+                    imageSrc={article.imageUrl ?? '/images/og-default.svg'}
+                    category={article.sourceCategory}
+                    source={article.sourceName}
+                  />
+                ))
+              }
+            </div>
+          </section>
+
+          <section class='section-block'>
+            <h2>More Stories</h2>
+            <div class='stories-grid'>
+              {
+                moreStories.map((article) => (
+                  <ArticleCard
+                    title={article.title}
+                    excerpt={article.excerpt}
+                    href={`/article/${article.slug}`}
+                    linkLabel='Read article'
+                    publishedAt={formatDate(article.publishedAt)}
+                    imageSrc={article.imageUrl ?? '/images/og-default.svg'}
+                    category={article.sourceCategory}
+                    source={article.sourceName}
+                    compact={true}
+                  />
+                ))
+              }
+            </div>
+          </section>
+        </>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .search-icon {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  .page-shell {
+    background: var(--shell-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .search-panel {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel-bg);
+    padding: 0.9rem;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .search-panel input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.7rem 0.8rem;
+    font-size: 0.95rem;
+    background: var(--input-bg);
+    color: var(--text-primary);
+  }
+
+  .search-toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .chips {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--chip-bg);
+    text-decoration: none;
+  }
+
+  .chip.active {
+    color: #fff;
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .search-btn {
+    border: 0;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: #fff;
+    padding: 0.45rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+
+  .stat-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 0.6rem 0.75rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+
+  .stat-card strong {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  .stat-card span {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  .empty-state {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .empty-state h2 {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+
+  .empty-state p {
+    margin: 0.45rem 0 0;
+    color: var(--text-muted);
+  }
+
+  .section-block {
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .section-block h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+  }
+
+  .trending-grid {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stories-grid {
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  @media (max-width: 1000px) {
+    .trending-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .stories-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .page-shell {
+      padding: 0.9rem;
+    }
+
+    .stats-row,
+    .trending-grid,
+    .stories-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

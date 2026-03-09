@@ -31,8 +31,12 @@
 3. Подключить TailwindCSS
 4. Создать/проверить базовую структуру папок
 5. Настроить глобальные стили
-pnpm install
-pnpm run check
+
+Проверка:
+- pnpm install
+- pnpm run check
+- pnpm run build
+
 На этом этапе страницы реализовывать не нужно.
 
 ---
@@ -57,18 +61,23 @@ components
 
 Реализовать:
 
-ArticleCard
-ThemeToggle
+- ArticleCard
+- ThemeToggle
 
-Компонент должен отображать:
+ArticleCard должен отображать:
 - заголовок статьи
 - краткое описание
 - ссылку на статью
+- дату публикации (если передана)
 
 ThemeToggle должен:
 - переключать светлую и тёмную темы
 - сохранять выбранную тему в localStorage
 - учитывать системную тему при первом открытии
+
+Проверка:
+- pnpm run check
+- pnpm run build
 
 ---
 
@@ -76,11 +85,20 @@ ThemeToggle должен:
 
 Создать страницы:
 
-Главная  
-src/pages/index.astro
+Главная
+- src/pages/index.astro
 
-Страница статьи  
-src/pages/article/[slug].astro
+Страница статьи
+- src/pages/article/[slug].astro
+
+Требования:
+- динамический маршрут статьи должен корректно работать в static output
+- обязательно реализовать getStaticPaths
+
+Проверка:
+- pnpm run dev
+- открыть /
+- открыть /article/<slug>
 
 ---
 
@@ -89,18 +107,52 @@ src/pages/article/[slug].astro
 Использовать Astro Content Collections.
 
 Структура:
-src/content/articles
+- src/content/config.ts
+- src/content/articles/*.md
 
-Статьи должны храниться в формате Markdown.
+Требования:
+- статьи хранятся в Markdown
+- frontmatter валидируется через schema (zod)
+- главная и страница статьи читают данные только из коллекции
 
 ---
 
 # ЭТАП 6 — SEO
 
 Добавить:
-- meta tags
+- meta tags (description, robots, canonical)
+- Open Graph / Twitter tags
 - sitemap
 - rss
+
+Дополнительно:
+- дефолтный og:image из public/images для всех страниц
+- возможность переопределить image через props layout
+
+---
+
+# ЭТАП 7 — Дизайн-паритет с design.png
+
+Довести UI главной до референса:
+
+1. Внешний shell-контейнер страницы (внутренняя панель с radius и отступами)
+2. Блок поиска:
+- поле поиска
+- чипы фильтров
+- кнопка Search
+3. KPI-блок с метриками:
+- articles found
+- sources used
+- duplicates removed
+4. Контентные секции:
+- Trending Articles
+- More Stories
+5. Карточка статьи v2:
+- превью-изображение 16:9
+- category label
+- заголовок + краткий текст
+- нижняя мета-строка (source/time)
+6. Иконка поиска в хедере
 
 ---
 
@@ -111,3 +163,4 @@ src/content/articles
 - следовать архитектуре Astro
 - писать чистый и модульный код
 - поддерживать светлую и тёмную темы
+- избегать полного переписывания файлов без необходимости

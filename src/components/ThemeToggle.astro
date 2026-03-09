@@ -1,0 +1,88 @@
+---
+export interface Props {
+  label?: string;
+  storageKey?: string;
+}
+
+const {
+  label = 'Toggle theme',
+  storageKey = 'theme'
+} = Astro.props;
+---
+
+<button
+  type='button'
+  class='theme-toggle'
+  aria-label={label}
+  data-theme-toggle
+  data-storage-key={storageKey}
+>
+  <span data-theme-icon aria-hidden='true'>◐</span>
+  <span data-theme-label>Theme</span>
+</button>
+
+<script is:inline>
+  const getPreferredTheme = () => {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  };
+
+  const applyTheme = (theme) => {
+    document.documentElement.dataset.theme = theme;
+  };
+
+  const setupToggle = (button) => {
+    const storageKey = button.dataset.storageKey || 'theme';
+    const savedTheme = window.localStorage.getItem(storageKey);
+    const initialTheme = savedTheme || getPreferredTheme();
+
+    applyTheme(initialTheme);
+
+    const setLabel = (theme) => {
+      const nextTheme = theme === 'dark' ? 'light' : 'dark';
+      const label = nextTheme === 'dark' ? 'Dark' : 'Light';
+      const textNode = button.querySelector('[data-theme-label]');
+      if (textNode) {
+        textNode.textContent = label;
+      }
+      button.setAttribute('aria-pressed', String(theme === 'dark'));
+      button.setAttribute('title', `Switch to ${nextTheme} theme`);
+    };
+
+    setLabel(initialTheme);
+
+    button.addEventListener('click', () => {
+      const currentTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+      applyTheme(nextTheme);
+      window.localStorage.setItem(storageKey, nextTheme);
+      setLabel(nextTheme);
+    });
+  };
+
+  document.querySelectorAll('[data-theme-toggle]').forEach(setupToggle);
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-primary);
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--primary);
+  }
+
+  [data-theme-icon] {
+    font-size: 0.95rem;
+  }
+</style>

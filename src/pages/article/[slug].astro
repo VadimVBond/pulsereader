@@ -1,7 +1,106 @@
 ---
-export function getStaticPaths() {
-  return [];
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { runNewsPipeline, type PipelineArticle } from '../../news/pipeline';
+
+export async function getStaticPaths() {
+  const result = await runNewsPipeline({ limit: 120 });
+
+  return result.articles.map((article) => ({
+    params: { slug: article.slug },
+    props: { article }
+  }));
 }
+
+const { article } = Astro.props as { article: PipelineArticle };
+
+const publishedAt = article.publishedAt
+  ? article.publishedAt.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    })
+  : null;
 ---
 
-<h1>Статья</h1>
+<BaseLayout title={`PulseReader | ${article.title}`} description={article.excerpt} containerSize='md'>
+  <article class='article-page'>
+    <header class='article-head'>
+      <p class='article-kicker'>{article.sourceName}</p>
+      <h1>{article.title}</h1>
+      {publishedAt && <p class='article-date'>{publishedAt}</p>}
+      <p class='article-excerpt'>{article.excerpt}</p>
+    </header>
+
+    <section class='article-body'>
+      <p>{article.excerpt}</p>
+      <p>
+        This article was aggregated from an external RSS source. Open the original page for full content and context.
+      </p>
+      <p>
+        <a href={article.url} target='_blank' rel='noopener noreferrer'>Read original article</a>
+      </p>
+    </section>
+
+    <p class='article-back'>
+      <a href='/'>Back to home</a>
+    </p>
+  </article>
+</BaseLayout>
+
+<style>
+  .article-page {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .article-head h1 {
+    margin: 0;
+    font-size: clamp(1.7rem, 2.8vw, 2.2rem);
+  }
+
+  .article-kicker {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .article-date {
+    margin: 0.5rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+  }
+
+  .article-excerpt {
+    margin: 0.4rem 0 0;
+    color: var(--text-muted);
+  }
+
+  .article-body p {
+    margin: 0 0 1rem;
+    line-height: 1.75;
+  }
+
+  .article-body a {
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .article-body a:hover {
+    text-decoration: underline;
+  }
+
+  .article-back {
+    margin: 0.75rem 0 0;
+  }
+
+  .article-back a {
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .article-back a:hover {
+    text-decoration: underline;
+  }
+</style>

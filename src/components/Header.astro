@@ -1,1 +1,94 @@
-<header>Header</header>
+---
+export interface NavLink {
+  label: string;
+  href: string;
+}
+
+export interface Props {
+  brand?: string;
+  homeHref?: string;
+  links?: NavLink[];
+}
+
+const {
+  brand = 'PulseReader',
+  homeHref = '/',
+  links = [
+    { label: 'Home', href: '/' },
+    { label: 'Categories', href: '#' },
+    { label: 'About', href: '#' },
+    { label: 'Contact', href: '#' }
+  ]
+} = Astro.props;
+---
+
+<header class='header'>
+  <a class='brand' href={homeHref}>{brand}</a>
+
+  <nav aria-label='Main navigation'>
+    <ul class='nav-list'>
+      {links.map((link) => (
+        <li>
+          <a href={link.href}>{link.label}</a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <slot name='actions' />
+</header>
+
+<style>
+  .header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--text-primary);
+  }
+
+  nav {
+    justify-self: center;
+  }
+
+  .nav-list {
+    display: flex;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .nav-list a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .nav-list a:hover {
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 720px) {
+    .header {
+      grid-template-columns: 1fr;
+      justify-items: start;
+    }
+
+    nav {
+      justify-self: start;
+    }
+
+    .nav-list {
+      flex-wrap: wrap;
+      gap: 0.75rem 1rem;
+    }
+  }
+</style>

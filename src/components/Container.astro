@@ -1,1 +1,41 @@
-<div class='container'><slot /></div>
+---
+export interface Props {
+  as?: keyof HTMLElementTagNameMap;
+  size?: 'sm' | 'md' | 'lg';
+  class?: string;
+}
+
+const { as = 'div', size = 'lg', class: className = '' } = Astro.props;
+const Tag = as;
+---
+
+<Tag class:list={[
+  'container-base',
+  {
+    'container-sm': size === 'sm',
+    'container-md': size === 'md',
+    'container-lg': size === 'lg'
+  },
+  className
+]}>
+  <slot />
+</Tag>
+
+<style>
+  .container-base {
+    width: min(100% - 2rem, 1200px);
+    margin-inline: auto;
+  }
+
+  .container-sm {
+    max-width: 640px;
+  }
+
+  .container-md {
+    max-width: 880px;
+  }
+
+  .container-lg {
+    max-width: 1200px;
+  }
+</style>

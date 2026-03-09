@@ -1,6 +1,10 @@
 import type { Locale } from '../i18n';
 import { dedupeArticles } from './dedupe';
 import { fetchFeeds } from './fetcher';
+import {
+  resolveArticleImageForSource,
+  type MissingImageReason
+} from './image';
 import { parseFeed } from './parser';
 import { getNewsSources, type NewsSource } from './sources';
 
@@ -8,21 +12,30 @@ export interface PipelineArticle {
   slug: string;
   title: string;
   excerpt: string;
+  description: string;
   url: string;
   sourceId: string;
   sourceName: string;
   sourceCategory: string;
   publishedAt?: Date;
   imageUrl?: string;
+  imageUnavailableReason?: MissingImageReason;
 }
+
+export type ImageIssueCounters = Record<MissingImageReason, number>;
 
 export interface PipelineResult {
   articles: PipelineArticle[];
   sources: NewsSource[];
   totalFetched: number;
   totalParsed: number;
+  totalNormalized: number;
+  totalFilteredOut: number;
+  totalDuplicatesRemoved: number;
+  totalDeduped: number;
   totalUnique: number;
   errors: Array<{ sourceId: string; error: string }>;
+  imageIssuesBySource: Record<string, ImageIssueCounters>;
 }
 
 export interface PipelineOptions {
@@ -61,6 +74,14 @@ function normalizeText(value: string, maxLen: number): string {
   return `${trimmed.slice(0, maxLen - 1)}…`;
 }
 
+function cleanupSummary(rawSummary: string): string {
+  return rawSummary
+    .replace(/(^|\s)Article\s+URL:\s*https?:\/\/\S+/gi, ' ')
+    .replace(/\bhttps?:\/\/\S+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function isLowQuality(title: string, excerpt: string, hasImage: boolean): boolean {
   const normalizedTitle = title.toLowerCase();
   const genericTitle =
@@ -75,17 +96,22 @@ function isLowQuality(title: string, excerpt: string, hasImage: boolean): boolea
 
 function toPipelineArticle(parsed: ReturnType<typeof parseFeed>[number]): PipelineArticle | null {
   const title = normalizeText(parsed.title, 120);
-  const excerpt = normalizeText(parsed.summary, 180);
+  const cleaned = cleanupSummary(parsed.summary);
+  const description = normalizeText(cleaned, 2400);
+  const excerpt = normalizeText(description, 180);
   const hasImage = Boolean(parsed.imageUrl);
 
   if (isLowQuality(title, excerpt, hasImage)) {
     return null;
   }
 
+  const fallbackText = 'Summary is unavailable in this RSS feed.';
+
   return {
     slug: slugify(title, parsed.url),
     title,
-    excerpt: excerpt || 'Summary is unavailable in this RSS feed.',
+    excerpt: excerpt || fallbackText,
+    description: description || fallbackText,
     url: parsed.url,
     sourceId: parsed.sourceId,
     sourceName: parsed.sourceName,
@@ -93,6 +119,84 @@ function toPipelineArticle(parsed: ReturnType<typeof parseFeed>[number]): Pipeli
     publishedAt: parsed.publishedAt,
     imageUrl: parsed.imageUrl
   };
+}
+
+function emptyImageIssueCounters(): ImageIssueCounters {
+  return {
+    no_media_tag: 0,
+    blocked_hotlink: 0,
+    no_og_image: 0,
+    timeout: 0
+  };
+}
+
+function initImageIssuesBySource(sources: NewsSource[]): Record<string, ImageIssueCounters> {
+  const map: Record<string, ImageIssueCounters> = {};
+
+  for (const source of sources) {
+    map[source.id] = emptyImageIssueCounters();
+  }
+
+  return map;
+}
+
+function collectImageIssue(
+  imageIssuesBySource: Record<string, ImageIssueCounters>,
+  sourceId: string,
+  reason: MissingImageReason | undefined
+): void {
+  if (!reason) return;
+
+  if (!imageIssuesBySource[sourceId]) {
+    imageIssuesBySource[sourceId] = emptyImageIssueCounters();
+  }
+
+  imageIssuesBySource[sourceId][reason] += 1;
+}
+
+async function enrichImages(
+  articles: PipelineArticle[],
+  maxCount: number,
+  imageIssuesBySource: Record<string, ImageIssueCounters>
+): Promise<void> {
+  const targets = articles.slice(0, maxCount);
+
+  await Promise.all(
+    targets.map(async (article) => {
+      const resolved = await resolveArticleImageForSource(article.sourceId, article.url, article.imageUrl);
+
+      article.imageUrl = resolved.imageUrl;
+      article.imageUnavailableReason = resolved.reason;
+      collectImageIssue(imageIssuesBySource, article.sourceId, resolved.reason);
+    })
+  );
+
+  for (const article of articles.slice(maxCount)) {
+    if (!article.imageUrl) {
+      article.imageUnavailableReason = 'no_media_tag';
+      collectImageIssue(imageIssuesBySource, article.sourceId, article.imageUnavailableReason);
+    }
+  }
+}
+
+function logImageIssues(imageIssuesBySource: Record<string, ImageIssueCounters>): void {
+  const lines = Object.entries(imageIssuesBySource)
+    .map(([sourceId, counters]) => {
+      const total =
+        counters.no_media_tag +
+        counters.blocked_hotlink +
+        counters.no_og_image +
+        counters.timeout;
+
+      if (total === 0) return '';
+
+      return `${sourceId}: no_media_tag=${counters.no_media_tag}, blocked_hotlink=${counters.blocked_hotlink}, no_og_image=${counters.no_og_image}, timeout=${counters.timeout}`;
+    })
+    .filter(Boolean);
+
+  if (lines.length > 0) {
+    console.info(`[PulseReader:image] ${lines.join(' | ')}`);
+  }
 }
 
 export async function runNewsPipeline(options: PipelineOptions = {}): Promise<PipelineResult> {
@@ -104,7 +208,7 @@ export async function runNewsPipeline(options: PipelineOptions = {}): Promise<Pi
 
   const errors: PipelineResult['errors'] = [];
   let totalParsed = 0;
-  const parsedArticles: PipelineArticle[] = [];
+  const normalizedArticles: PipelineArticle[] = [];
 
   for (const feed of feedResults) {
     if (!feed.ok) {
@@ -121,22 +225,41 @@ export async function runNewsPipeline(options: PipelineOptions = {}): Promise<Pi
     for (const article of parsed) {
       const normalized = toPipelineArticle(article);
       if (normalized) {
-        parsedArticles.push(normalized);
+        normalizedArticles.push(normalized);
       }
     }
   }
 
-  const deduped = dedupeArticles(parsedArticles)
-    .sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0))
-    .slice(0, options.limit ?? 60);
+  const dedupedAll = dedupeArticles(normalizedArticles).sort(
+    (a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0)
+  );
+
+  const imageIssuesBySource = initImageIssuesBySource(selectedSources);
+
+  const limit = options.limit ?? 60;
+  await enrichImages(dedupedAll, Math.min(120, limit * 2), imageIssuesBySource);
+
+  const articles = dedupedAll.slice(0, limit);
+
+  const totalNormalized = normalizedArticles.length;
+  const totalFilteredOut = Math.max(0, totalParsed - totalNormalized);
+  const totalDuplicatesRemoved = Math.max(0, totalNormalized - dedupedAll.length);
+  const totalDeduped = dedupedAll.length;
+
+  logImageIssues(imageIssuesBySource);
 
   return {
-    articles: deduped,
+    articles,
     sources: selectedSources,
     totalFetched: feedResults.length,
     totalParsed,
-    totalUnique: deduped.length,
-    errors
+    totalNormalized,
+    totalFilteredOut,
+    totalDuplicatesRemoved,
+    totalDeduped,
+    totalUnique: articles.length,
+    errors,
+    imageIssuesBySource
   };
 }
 

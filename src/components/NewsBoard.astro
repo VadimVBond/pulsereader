@@ -18,15 +18,36 @@ const t = getUiText(locale);
 const prefix = localePrefix(locale);
 
 const articles = pipeline.articles;
-const trending = articles.slice(0, 3);
-const moreStories = articles.slice(3, 11);
+const trending = articles.filter((article) => Boolean(article.imageUrl)).slice(0, 3);
+const trendingSlugs = new Set(trending.map((article) => article.slug));
+const moreStories = articles.filter((article) => !trendingSlugs.has(article.slug)).slice(0, 8);
 const hasNews = articles.length > 0;
 
 const activeSource = selectedSourceId ? sources.find((source) => source.id === selectedSourceId) : null;
 const showingLabel = activeSource ? activeSource.name : t.allSources;
 
 const formatDate = (value?: Date) =>
-  value ? value.toLocaleDateString(locale === 'en' ? 'en-US' : locale === 'uk' ? 'uk-UA' : 'ru-RU', { day: '2-digit', month: 'short', year: 'numeric' }) : undefined;
+  value
+    ? value.toLocaleDateString(locale === 'en' ? 'en-US' : locale === 'uk' ? 'uk-UA' : 'ru-RU', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      })
+    : undefined;
+
+const localizeCategory = (category: string) => {
+  if (category === 'Technology') {
+    if (locale === 'ru') return 'Технологии';
+    if (locale === 'uk') return 'Технології';
+  }
+
+  if (category === 'News') {
+    if (locale === 'ru') return 'Новости';
+    if (locale === 'uk') return 'Новини';
+  }
+
+  return category;
+};
 
 const sourceHref = (id: string) => `${prefix}/source/${id}`;
 const articleHref = (slug: string) => `${prefix}/article/${slug}`;
@@ -53,12 +74,14 @@ const homeHref = prefix || '/';
   </section>
 
   <section class='stats-row' aria-label='Stats'>
-    <article class='stat-card'><strong>{pipeline.totalUnique}</strong><span>{t.articlesFound}</span></article>
+    <article class='stat-card'><strong>{pipeline.totalDeduped}</strong><span>{t.articlesFound}</span></article>
     <article class='stat-card'><strong>{pipeline.sources.length}</strong><span>{t.sourcesUsed}</span></article>
-    <article class='stat-card'><strong>{Math.max(0, pipeline.totalParsed - pipeline.totalUnique)}</strong><span>{t.duplicatesRemoved}</span></article>
+    <article class='stat-card'><strong>{pipeline.totalDuplicatesRemoved}</strong><span>{t.duplicatesRemoved}</span></article>
   </section>
 
-  <p class='source-indicator'>{t.showingFrom}: <strong>{showingLabel}</strong></p>
+  <p class='source-indicator'>
+    {t.showingFrom}: <strong>{showingLabel}</strong>
+  </p>
 
   {
     !hasNews && (
@@ -83,9 +106,10 @@ const homeHref = prefix || '/';
                   href={articleHref(article.slug)}
                   linkLabel={t.readArticle}
                   publishedAt={formatDate(article.publishedAt)}
-                  imageSrc={article.imageUrl ?? '/images/og-default.svg'}
-                  category={article.sourceCategory}
+                  imageSrc={article.imageUrl}
+                  category={localizeCategory(article.sourceCategory)}
                   source={article.sourceName}
+                  imageUnavailableLabel={t.imageUnavailable}
                 />
               ))
             }
@@ -103,10 +127,11 @@ const homeHref = prefix || '/';
                   href={articleHref(article.slug)}
                   linkLabel={t.readArticle}
                   publishedAt={formatDate(article.publishedAt)}
-                  imageSrc={article.imageUrl ?? '/images/og-default.svg'}
-                  category={article.sourceCategory}
+                  imageSrc={article.imageUrl}
+                  category={localizeCategory(article.sourceCategory)}
                   source={article.sourceName}
                   compact={true}
+                  imageUnavailableLabel={t.imageUnavailable}
                 />
               ))
             }

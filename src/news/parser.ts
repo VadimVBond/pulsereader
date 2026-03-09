@@ -43,6 +43,20 @@ function stripHtml(text: string): string {
     .trim();
 }
 
+function extractFirstImageFromHtml(rawHtml: string): string | undefined {
+  const html = decodeHtml(rawHtml);
+  const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
+  const src = imgMatch?.[1]?.trim();
+
+  if (!src) return undefined;
+
+  if (/^https?:\/\//i.test(src)) {
+    return src;
+  }
+
+  return undefined;
+}
+
 function extractAll(xml: string, tagName: string): string[] {
   const re = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'gi');
   const matches: string[] = [];
@@ -90,7 +104,8 @@ function parseRssItem(itemBlock: string, source: NewsSource): ParsedFeedArticle 
   const imageUrl =
     extractAttr(itemBlock, 'media:content', 'url') ??
     extractAttr(itemBlock, 'media:thumbnail', 'url') ??
-    extractAttr(itemBlock, 'enclosure', 'url');
+    extractAttr(itemBlock, 'enclosure', 'url') ??
+    extractFirstImageFromHtml(summaryRaw);
 
   return {
     sourceId: source.id,
@@ -116,6 +131,12 @@ function parseAtomItem(entryBlock: string, source: NewsSource): ParsedFeedArticl
     return null;
   }
 
+  const imageUrl =
+    extractAttr(entryBlock, 'media:content', 'url') ??
+    extractAttr(entryBlock, 'media:thumbnail', 'url') ??
+    extractAttr(entryBlock, 'enclosure', 'url') ??
+    extractFirstImageFromHtml(summaryRaw);
+
   return {
     sourceId: source.id,
     sourceName: source.name,
@@ -123,7 +144,8 @@ function parseAtomItem(entryBlock: string, source: NewsSource): ParsedFeedArticl
     title,
     summary,
     url: link,
-    publishedAt: parseDate(extractTag(entryBlock, 'updated') ?? extractTag(entryBlock, 'published'))
+    publishedAt: parseDate(extractTag(entryBlock, 'updated') ?? extractTag(entryBlock, 'published')),
+    imageUrl
   };
 }
 

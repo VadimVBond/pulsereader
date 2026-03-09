@@ -9,6 +9,7 @@ export interface Props {
   category?: string;
   source?: string;
   compact?: boolean;
+  imageUnavailableLabel?: string;
 }
 
 const {
@@ -20,7 +21,8 @@ const {
   imageSrc,
   category = 'Category',
   source = 'Source',
-  compact = false
+  compact = false,
+  imageUnavailableLabel
 } = Astro.props;
 ---
 
@@ -44,6 +46,8 @@ const {
       {publishedAt && <span class='meta-sep'>•</span>}
       {publishedAt && <span>{publishedAt}</span>}
     </div>
+
+    {!imageSrc && imageUnavailableLabel && <p class='image-unavailable'>{imageUnavailableLabel}</p>}
 
     <a class='article-link' href={href}>{linkLabel}</a>
   </div>
@@ -141,6 +145,12 @@ const {
 
   .meta-sep {
     opacity: 0.7;
+  }
+
+  .image-unavailable {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--text-muted);
   }
 
   .article-link {

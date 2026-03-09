@@ -32,6 +32,9 @@ export interface UiText {
   articleKicker: string;
   aggregatedNote: string;
   langLabel: string;
+  imageUnavailable: string;
+  translateDescription: string;
+  translating: string;
 }
 
 export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
@@ -56,7 +59,10 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
     readOriginal: 'Read original article',
     articleKicker: 'Article',
     aggregatedNote: 'This article was aggregated from an external RSS source. Open the original page for full content and context.',
-    langLabel: 'Language'
+    langLabel: 'Language',
+    imageUnavailable: 'Image unavailable from source',
+    translateDescription: 'Translate description',
+    translating: 'Translating...'
   },
   uk: {
     navHome: 'Головна',
@@ -79,7 +85,10 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
     readOriginal: 'Читати оригінал',
     articleKicker: 'Стаття',
     aggregatedNote: 'Цю статтю агреговано із зовнішнього RSS-джерела. Відкрийте оригінал для повного контексту.',
-    langLabel: 'Мова'
+    langLabel: 'Мова',
+    imageUnavailable: 'Зображення недоступне у джерелі',
+    translateDescription: 'Перекласти опис',
+    translating: 'Переклад...'
   },
   ru: {
     navHome: 'Главная',
@@ -102,10 +111,15 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
     readOriginal: 'Читать оригинал',
     articleKicker: 'Статья',
     aggregatedNote: 'Эта статья агрегирована из внешнего RSS-источника. Откройте оригинал для полного контекста.',
-    langLabel: 'Язык'
+    langLabel: 'Язык',
+    imageUnavailable: 'Изображение недоступно в источнике',
+    translateDescription: 'Перевести описание',
+    translating: 'Перевод...'
   }
 };
 
 export function getUiText(locale: Locale): UiText {
   return UI_TEXT_BY_LOCALE[locale];
 }
+
+

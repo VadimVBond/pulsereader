@@ -56,8 +56,24 @@ const localizeCategory = (category: string) => {
     if (locale === 'uk') return 'Новини';
   }
 
+  if (category === 'Sports') {
+    return locale === 'en' ? 'Sports' : 'Спорт';
+  }
+
+  if (category === 'Culture') {
+    return locale === 'en' ? 'Culture' : 'Культура';
+  }
+
   return category;
 };
+
+const categories = [
+  { id: 'all', label: locale === 'en' ? 'All' : locale === 'uk' ? 'Усі' : 'Все' },
+  { id: 'News', label: localizeCategory('News') },
+  { id: 'Technology', label: localizeCategory('Technology') },
+  { id: 'Sports', label: localizeCategory('Sports') },
+  { id: 'Culture', label: localizeCategory('Culture') }
+];
 
 const searchEmptyText =
   locale === 'en'
@@ -66,27 +82,88 @@ const searchEmptyText =
       ? 'Немає статей за цим запитом.'
       : 'По вашему запросу статьи не найдены.';
 
+const popularTagsByCategory = {
+  all:
+    locale === 'en'
+      ? ['AI', 'Startups', 'Security', 'Gadgets', 'Space', 'Fintech', 'Gaming', 'Mobile']
+      : locale === 'uk'
+        ? ['ШІ', 'Стартапи', 'Безпека', 'Гаджети', 'Космос', 'Фінтех', 'Ігри', 'Мобільні']
+        : ['ИИ', 'Стартапы', 'Безопасность', 'Гаджеты', 'Космос', 'Финтех', 'Игры', 'Мобильные'],
+  News:
+    locale === 'en'
+      ? ['Politics', 'World', 'Ukraine', 'Economy', 'Energy', 'Diplomacy', 'Elections', 'Markets']
+      : locale === 'uk'
+        ? ['Політика', 'Світ', 'Україна', 'Економіка', 'Енергія', 'Дипломатія', 'Вибори', 'Ринки']
+        : ['Политика', 'Мир', 'Украина', 'Экономика', 'Энергетика', 'Дипломатия', 'Выборы', 'Рынки'],
+  Technology:
+    locale === 'en'
+      ? ['AI', 'Startups', 'Cloud', 'Security', 'Apps', 'Hardware', 'Web', 'Mobile']
+      : locale === 'uk'
+        ? ['ШІ', 'Стартапи', 'Хмара', 'Безпека', 'Додатки', 'Залізо', 'Веб', 'Мобільні']
+        : ['ИИ', 'Стартапы', 'Облако', 'Безопасность', 'Приложения', 'Железо', 'Веб', 'Мобильные'],
+  Sports:
+    locale === 'en'
+      ? ['Football', 'Tennis', 'Basketball', 'Boxing', 'Formula 1', 'Olympics', 'Transfers', 'Results']
+      : locale === 'uk'
+        ? ['Футбол', 'Теніс', 'Баскетбол', 'Бокс', 'Формула 1', 'Олімпіада', 'Трансфери', 'Результати']
+        : ['Футбол', 'Теннис', 'Баскетбол', 'Бокс', 'Формула 1', 'Олимпиада', 'Трансферы', 'Результаты'],
+  Culture:
+    locale === 'en'
+      ? ['Movies', 'Music', 'Books', 'Art', 'Theatre', 'Festivals', 'Reviews', 'Interviews']
+      : locale === 'uk'
+        ? ['Кіно', 'Музика', 'Книги', 'Мистецтво', 'Театр', 'Фестивалі', 'Огляди', 'Інтерв’ю']
+        : ['Кино', 'Музыка', 'Книги', 'Искусство', 'Театр', 'Фестивали', 'Обзоры', 'Интервью']
+};
+
 const sourceHref = (id: string) => `${prefix}/source/${id}`;
 const articleHref = (slug: string) => `${prefix}/article/${slug}`;
 const homeHref = prefix;
 ---
 
 <div class='page-shell' data-search-root>
+  <section class='category-panel' aria-label='Category filters'>
+    {categories.map((category) => (
+      <button
+        type='button'
+        class:list={['category-chip', { active: category.id === 'all' }]}
+        data-category={category.id}
+      >
+        {category.label}
+      </button>
+    ))}
+  </section>
+
   <section class='search-panel' aria-label='Source filters'>
-    <input type='search' placeholder={t.searchPlaceholder} aria-label={t.searchPlaceholder} data-search-input />
+    <div class='chips'>
+      <a class:list={['chip', { active: !selectedSourceId }]} href={homeHref} data-source-category='all'>{t.allSources}</a>
+      {
+        sources.map((source) => (
+          <a
+            class:list={['chip', { active: selectedSourceId === source.id }]}
+            href={sourceHref(source.id)}
+            data-source-category={source.category}
+          >
+            {source.name}
+          </a>
+        ))
+      }
+    </div>
 
     <div class='search-toolbar'>
-      <div class='chips'>
-        <a class:list={['chip', { active: !selectedSourceId }]} href={homeHref}>{t.allSources}</a>
-        {
-          sources.map((source) => (
-            <a class:list={['chip', { active: selectedSourceId === source.id }]} href={sourceHref(source.id)}>
-              {source.name}
-            </a>
-          ))
-        }
+      <div class='search-input-group'>
+        <input type='search' placeholder={t.searchPlaceholder} aria-label={t.searchPlaceholder} data-search-input />
+        <button type='button' class='search-btn' data-search-button>{t.searchButton}</button>
       </div>
-      <button type='button' class='search-btn' data-search-button>{t.searchButton}</button>
+
+      <div class='popular-tags' aria-label='Popular search tags'>
+        {Object.entries(popularTagsByCategory).map(([key, tags]) => (
+          <div class='tag-group' data-tag-group={key} hidden={key !== 'all'}>
+            {tags.map((tag) => (
+              <button type='button' class='tag' data-tag={tag}>{tag}</button>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   </section>
 
@@ -131,7 +208,12 @@ const homeHref = prefix;
                 const haystack = `${article.title} ${article.excerpt} ${article.sourceName} ${category}`.toLowerCase();
 
                 return (
-                  <div class='article-item' data-card data-haystack={haystack}>
+                  <div
+                    class='article-item'
+                    data-card
+                    data-haystack={haystack}
+                    data-category={article.sourceCategory}
+                  >
                     <ArticleCard
                       title={article.title}
                       excerpt={article.excerpt}
@@ -159,7 +241,12 @@ const homeHref = prefix;
                 const haystack = `${article.title} ${article.excerpt} ${article.sourceName} ${category}`.toLowerCase();
 
                 return (
-                  <div class='article-item' data-card data-haystack={haystack}>
+                  <div
+                    class='article-item'
+                    data-card
+                    data-haystack={haystack}
+                    data-category={article.sourceCategory}
+                  >
                     <ArticleCard
                       title={article.title}
                       excerpt={article.excerpt}
@@ -193,10 +280,29 @@ const homeHref = prefix;
     const cards = Array.from(root.querySelectorAll('[data-card]'));
     const foundCount = root.querySelector('[data-found-count]');
     const emptyState = root.querySelector('[data-search-empty]');
+    const tags = Array.from(root.querySelectorAll('[data-tag]'));
+    const categoryButtons = Array.from(root.querySelectorAll('[data-category]'));
+    const sourceChips = Array.from(root.querySelectorAll('[data-source-category]'));
+    const tagGroups = Array.from(root.querySelectorAll('[data-tag-group]'));
 
     if (!input || !button || cards.length === 0 || !foundCount || !emptyState) return;
 
+    let activeCategory = 'all';
+
     const normalize = (value) => value.toLowerCase().trim();
+
+    const updateTags = () => {
+      tagGroups.forEach((group) => {
+        group.hidden = group.getAttribute('data-tag-group') !== activeCategory;
+      });
+    };
+
+    const updateSources = () => {
+      sourceChips.forEach((chip) => {
+        const category = chip.getAttribute('data-source-category') || 'all';
+        chip.hidden = activeCategory !== 'all' && category !== activeCategory;
+      });
+    };
 
     const applySearch = () => {
       const query = normalize(input.value || '');
@@ -204,13 +310,25 @@ const homeHref = prefix;
 
       for (const card of cards) {
         const haystack = normalize(card.getAttribute('data-haystack') || '');
-        const matched = !query || haystack.includes(query);
+        const category = card.getAttribute('data-category') || 'all';
+        const matchesCategory = activeCategory === 'all' || category === activeCategory;
+        const matched = (!query || haystack.includes(query)) && matchesCategory;
         card.hidden = !matched;
         if (matched) visibleCount += 1;
       }
 
       foundCount.textContent = String(visibleCount);
       emptyState.hidden = visibleCount !== 0;
+    };
+
+    const setActiveCategory = (category) => {
+      activeCategory = category;
+      categoryButtons.forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-category') === category);
+      });
+      updateSources();
+      updateTags();
+      applySearch();
     };
 
     input.addEventListener('input', applySearch);
@@ -221,6 +339,20 @@ const homeHref = prefix;
       }
     });
     button.addEventListener('click', applySearch);
+    tags.forEach((tag) => {
+      tag.addEventListener('click', () => {
+        input.value = tag.textContent || '';
+        applySearch();
+      });
+    });
+    categoryButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const category = btn.getAttribute('data-category') || 'all';
+        setActiveCategory(category);
+      });
+    });
+
+    setActiveCategory(activeCategory);
   })();
 </script>
 
@@ -234,6 +366,28 @@ const homeHref = prefix;
     gap: 1rem;
   }
 
+  .category-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .category-chip {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .category-chip.active {
+    color: #fff;
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+
   .search-panel {
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -243,20 +397,10 @@ const homeHref = prefix;
     gap: 0.75rem;
   }
 
-  .search-panel input {
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.7rem 0.8rem;
-    font-size: 0.95rem;
-    background: var(--input-bg);
-    color: var(--text-primary);
-  }
-
   .search-toolbar {
     display: flex;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 1rem;
     align-items: center;
     flex-wrap: wrap;
   }
@@ -283,14 +427,63 @@ const homeHref = prefix;
     border-color: var(--primary);
   }
 
+  .search-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: min(360px, 100%);
+    flex: 1 1 360px;
+  }
+
+  .search-input-group input {
+    width: min(420px, 100%);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.88rem;
+    background: var(--input-bg);
+    color: var(--text-primary);
+  }
+
   .search-btn {
     border: 0;
     border-radius: 8px;
     background: #3b82f6;
     color: #fff;
-    padding: 0.45rem 1rem;
+    padding: 0.35rem 0.85rem;
     font-weight: 600;
     cursor: pointer;
+  }
+
+  .popular-tags {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 0.45rem;
+    justify-items: end;
+    flex: 0 1 auto;
+    margin-left: auto;
+  }
+
+  .tag-group {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .tag {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-muted);
+    padding: 0.2rem 0.55rem;
+    font-size: 0.7rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .tag:hover {
+    color: var(--text-primary);
+    border-color: var(--primary);
   }
 
   .stats-row {
@@ -389,6 +582,10 @@ const homeHref = prefix;
     .stories-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .tag-group {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   @media (max-width: 720px) {
@@ -400,6 +597,19 @@ const homeHref = prefix;
     .trending-grid,
     .stories-grid {
       grid-template-columns: 1fr;
+    }
+
+    .search-input-group {
+      width: 100%;
+    }
+
+    .tag-group {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .popular-tags {
+      justify-items: start;
+      width: 100%;
     }
   }
 </style>

@@ -45,6 +45,41 @@ export const NEWS_SOURCES: NewsSource[] = [
     locales: ['uk', 'ru']
   },
   {
+    id: 'guardian-sport',
+    name: 'The Guardian Sport',
+    url: 'https://www.theguardian.com/uk/sport/rss',
+    category: 'Sports',
+    locales: ['en', 'uk', 'ru']
+  },
+  {
+    id: 'guardian-culture',
+    name: 'The Guardian Culture',
+    url: 'https://www.theguardian.com/uk/culture/rss',
+    category: 'Culture',
+    locales: ['en', 'uk', 'ru']
+  },
+  {
+    id: 'bbc-sport-football',
+    name: 'BBC Sport Football',
+    url: 'http://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml',
+    category: 'Sports',
+    locales: ['en', 'uk', 'ru']
+  },
+  {
+    id: 'bbc-sport-tennis',
+    name: 'BBC Sport Tennis',
+    url: 'http://newsrss.bbc.co.uk/rss/sportonline_uk_edition/tennis/rss.xml',
+    category: 'Sports',
+    locales: ['en', 'uk', 'ru']
+  },
+  {
+    id: 'bbc-entertainment',
+    name: 'BBC Entertainment',
+    url: 'http://news.bbc.co.uk/rss/newsonline_uk_edition/entertainment/rss091.xml',
+    category: 'Culture',
+    locales: ['en', 'uk', 'ru']
+  },
+  {
     id: 'techcrunch',
     name: 'TechCrunch',
     url: 'https://techcrunch.com/feed/',
@@ -110,3 +145,5 @@ export function getNewsSources(selectedIds?: string[], locale: Locale = 'ru'): N
   const selected = new Set(selectedIds);
   return localized.filter((source) => selected.has(source.id));
 }
+
+

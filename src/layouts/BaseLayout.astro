@@ -1,4 +1,5 @@
 ---
+import { ViewTransitions } from 'astro:transitions';
 import '../styles/global.css';
 import Container from '../components/Container.astro';
 import Header, { type NavLink } from '../components/Header.astro';
@@ -43,6 +44,16 @@ const imageUrl = new URL(image ?? defaultImagePath, Astro.site).toString();
   <head>
     <meta charset='utf-8' />
     <meta name='viewport' content='width=device-width, initial-scale=1' />
+    <script is:inline>
+      (() => {
+        const key = 'theme';
+        const saved = window.localStorage.getItem(key);
+        const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const theme = saved === 'dark' || saved === 'light' ? saved : preferred;
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <ViewTransitions />
     <title>{title}</title>
 
     <meta name='description' content={description} />
@@ -86,3 +97,4 @@ const imageUrl = new URL(image ?? defaultImagePath, Astro.site).toString();
     padding: 1.5rem 0 2rem;
   }
 </style>
+

@@ -6,13 +6,41 @@ export interface NewsSource {
   url: string;
   category: string;
   locales: Locale[];
+  feedUrls?: string[];
 }
+
+const KORRESPONDENT_RU_FEEDS = [
+  'https://k.img.com.ua/rss/ru/all_news2.0.xml',
+  'https://k.img.com.ua/rss/ru/ukraine.xml',
+  'https://k.img.com.ua/rss/ru/world.xml'
+];
+
+const KORRESPONDENT_UK_FEEDS = [
+  'https://k.img.com.ua/rss/ua/all_news2.0.xml',
+  'https://k.img.com.ua/rss/ua/ukraine.xml',
+  'https://k.img.com.ua/rss/ua/world.xml'
+];
 
 export const NEWS_SOURCES: NewsSource[] = [
   {
     id: 'korrespondent',
     name: 'Korrespondent',
-    url: 'https://korrespondent.net/rss_subscription/',
+    url: KORRESPONDENT_RU_FEEDS[0],
+    category: 'News',
+    locales: ['uk', 'ru'],
+    feedUrls: KORRESPONDENT_RU_FEEDS
+  },
+  {
+    id: 'ukrainska-pravda',
+    name: 'Ukrainska Pravda',
+    url: 'https://www.pravda.com.ua/rss/',
+    category: 'News',
+    locales: ['uk', 'ru']
+  },
+  {
+    id: 'bbc-ukrainian',
+    name: 'BBC Ukrainian',
+    url: 'https://feeds.bbci.co.uk/ukrainian/rss.xml',
     category: 'News',
     locales: ['uk', 'ru']
   },
@@ -60,10 +88,25 @@ export function getNewsSources(selectedIds?: string[], locale: Locale = 'ru'): N
     return NEWS_SOURCES;
   }
 
+  const localized = base.map((source) => {
+    if (source.id !== 'korrespondent') return source;
+
+    const feedUrls =
+      locale === 'uk'
+        ? [...KORRESPONDENT_UK_FEEDS, ...KORRESPONDENT_RU_FEEDS]
+        : [...KORRESPONDENT_RU_FEEDS, ...KORRESPONDENT_UK_FEEDS];
+
+    return {
+      ...source,
+      url: feedUrls[0],
+      feedUrls
+    };
+  });
+
   if (!selectedIds || selectedIds.length === 0) {
-    return base;
+    return localized;
   }
 
   const selected = new Set(selectedIds);
-  return base.filter((source) => selected.has(source.id));
+  return localized.filter((source) => selected.has(source.id));
 }

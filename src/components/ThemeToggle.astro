@@ -4,10 +4,7 @@ export interface Props {
   storageKey?: string;
 }
 
-const {
-  label = 'Toggle theme',
-  storageKey = 'theme'
-} = Astro.props;
+const { label = 'Toggle theme', storageKey = 'theme' } = Astro.props;
 ---
 
 <button
@@ -22,45 +19,65 @@ const {
 </button>
 
 <script is:inline>
-  const getPreferredTheme = () => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  };
+  (() => {
+    const getPreferredTheme = () => {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
 
-  const applyTheme = (theme) => {
-    document.documentElement.dataset.theme = theme;
-  };
+    const applyTheme = (theme) => {
+      document.documentElement.dataset.theme = theme;
+    };
 
-  const setupToggle = (button) => {
-    const storageKey = button.dataset.storageKey || 'theme';
-    const savedTheme = window.localStorage.getItem(storageKey);
-    const initialTheme = savedTheme || getPreferredTheme();
+    const getInitialTheme = (key) => {
+      const savedTheme = window.localStorage.getItem(key);
+      return savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : getPreferredTheme();
+    };
 
-    applyTheme(initialTheme);
-
-    const setLabel = (theme) => {
+    const setToggleLabel = (button, theme) => {
       const nextTheme = theme === 'dark' ? 'light' : 'dark';
-      const label = nextTheme === 'dark' ? 'Dark' : 'Light';
       const textNode = button.querySelector('[data-theme-label]');
       if (textNode) {
-        textNode.textContent = label;
+        textNode.textContent = nextTheme === 'dark' ? 'Dark' : 'Light';
       }
+
       button.setAttribute('aria-pressed', String(theme === 'dark'));
       button.setAttribute('title', `Switch to ${nextTheme} theme`);
     };
 
-    setLabel(initialTheme);
+    const bindToggle = (button) => {
+      if (!(button instanceof HTMLElement) || button.dataset.themeBound === 'true') {
+        return;
+      }
 
-    button.addEventListener('click', () => {
-      const currentTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
-      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      const storageKey = button.dataset.storageKey || 'theme';
+      const initialTheme = getInitialTheme(storageKey);
+      applyTheme(initialTheme);
+      setToggleLabel(button, initialTheme);
 
-      applyTheme(nextTheme);
-      window.localStorage.setItem(storageKey, nextTheme);
-      setLabel(nextTheme);
-    });
-  };
+      button.addEventListener('click', () => {
+        const currentTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-  document.querySelectorAll('[data-theme-toggle]').forEach(setupToggle);
+        applyTheme(nextTheme);
+        window.localStorage.setItem(storageKey, nextTheme);
+        setToggleLabel(button, nextTheme);
+      });
+
+      button.dataset.themeBound = 'true';
+    };
+
+    const initThemeToggles = () => {
+      document.querySelectorAll('[data-theme-toggle]').forEach((button) => bindToggle(button));
+    };
+
+    if (!window.__pulseThemeInitBound) {
+      window.__pulseThemeInitBound = true;
+      document.addEventListener('astro:page-load', initThemeToggles);
+      document.addEventListener('DOMContentLoaded', initThemeToggles);
+    }
+
+    initThemeToggles();
+  })();
 </script>
 
 <style>

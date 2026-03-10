@@ -26,6 +26,16 @@ const hasNews = articles.length > 0;
 const activeSource = selectedSourceId ? sources.find((source) => source.id === selectedSourceId) : null;
 const showingLabel = activeSource ? activeSource.name : t.allSources;
 
+const selectedSourceError = selectedSourceId
+  ? pipeline.errors.find((error) => error.sourceId === selectedSourceId)
+  : null;
+
+const compactError = (value: string) =>
+  value
+    .replace(/\s*\|\s*/g, '; ')
+    .replace(/https?:\/\/\S+\s*->\s*/g, '')
+    .slice(0, 220);
+
 const formatDate = (value?: Date) =>
   value
     ? value.toLocaleDateString(locale === 'en' ? 'en-US' : locale === 'uk' ? 'uk-UA' : 'ru-RU', {
@@ -49,14 +59,21 @@ const localizeCategory = (category: string) => {
   return category;
 };
 
+const searchEmptyText =
+  locale === 'en'
+    ? 'No articles match your search.'
+    : locale === 'uk'
+      ? 'Немає статей за цим запитом.'
+      : 'По вашему запросу статьи не найдены.';
+
 const sourceHref = (id: string) => `${prefix}/source/${id}`;
 const articleHref = (slug: string) => `${prefix}/article/${slug}`;
-const homeHref = prefix || '/';
+const homeHref = prefix;
 ---
 
-<div class='page-shell'>
+<div class='page-shell' data-search-root>
   <section class='search-panel' aria-label='Source filters'>
-    <input type='search' placeholder={t.searchPlaceholder} aria-label={t.searchPlaceholder} />
+    <input type='search' placeholder={t.searchPlaceholder} aria-label={t.searchPlaceholder} data-search-input />
 
     <div class='search-toolbar'>
       <div class='chips'>
@@ -69,12 +86,12 @@ const homeHref = prefix || '/';
           ))
         }
       </div>
-      <button type='button' class='search-btn'>{t.searchButton}</button>
+      <button type='button' class='search-btn' data-search-button>{t.searchButton}</button>
     </div>
   </section>
 
   <section class='stats-row' aria-label='Stats'>
-    <article class='stat-card'><strong>{pipeline.totalDeduped}</strong><span>{t.articlesFound}</span></article>
+    <article class='stat-card'><strong data-found-count>{articles.length}</strong><span>{t.articlesFound}</span></article>
     <article class='stat-card'><strong>{pipeline.sources.length}</strong><span>{t.sourcesUsed}</span></article>
     <article class='stat-card'><strong>{pipeline.totalDuplicatesRemoved}</strong><span>{t.duplicatesRemoved}</span></article>
   </section>
@@ -82,6 +99,16 @@ const homeHref = prefix || '/';
   <p class='source-indicator'>
     {t.showingFrom}: <strong>{showingLabel}</strong>
   </p>
+
+  {
+    selectedSourceError && (
+      <p class='source-error'>
+        <strong>{t.sourceUnavailable}.</strong> {t.sourceUnavailableDetails}: {compactError(selectedSourceError.error)}
+      </p>
+    )
+  }
+
+  <p class='search-empty' data-search-empty hidden>{searchEmptyText}</p>
 
   {
     !hasNews && (
@@ -99,19 +126,26 @@ const homeHref = prefix || '/';
           <h2>{t.trending}</h2>
           <div class='trending-grid'>
             {
-              trending.map((article) => (
-                <ArticleCard
-                  title={article.title}
-                  excerpt={article.excerpt}
-                  href={articleHref(article.slug)}
-                  linkLabel={t.readArticle}
-                  publishedAt={formatDate(article.publishedAt)}
-                  imageSrc={article.imageUrl}
-                  category={localizeCategory(article.sourceCategory)}
-                  source={article.sourceName}
-                  imageUnavailableLabel={t.imageUnavailable}
-                />
-              ))
+              trending.map((article) => {
+                const category = localizeCategory(article.sourceCategory);
+                const haystack = `${article.title} ${article.excerpt} ${article.sourceName} ${category}`.toLowerCase();
+
+                return (
+                  <div class='article-item' data-card data-haystack={haystack}>
+                    <ArticleCard
+                      title={article.title}
+                      excerpt={article.excerpt}
+                      href={articleHref(article.slug)}
+                      linkLabel={t.readArticle}
+                      publishedAt={formatDate(article.publishedAt)}
+                      imageSrc={article.imageUrl}
+                      category={category}
+                      source={article.sourceName}
+                      imageUnavailableLabel={t.imageUnavailable}
+                    />
+                  </div>
+                );
+              })
             }
           </div>
         </section>
@@ -120,20 +154,27 @@ const homeHref = prefix || '/';
           <h2>{t.moreStories}</h2>
           <div class='stories-grid'>
             {
-              moreStories.map((article) => (
-                <ArticleCard
-                  title={article.title}
-                  excerpt={article.excerpt}
-                  href={articleHref(article.slug)}
-                  linkLabel={t.readArticle}
-                  publishedAt={formatDate(article.publishedAt)}
-                  imageSrc={article.imageUrl}
-                  category={localizeCategory(article.sourceCategory)}
-                  source={article.sourceName}
-                  compact={true}
-                  imageUnavailableLabel={t.imageUnavailable}
-                />
-              ))
+              moreStories.map((article) => {
+                const category = localizeCategory(article.sourceCategory);
+                const haystack = `${article.title} ${article.excerpt} ${article.sourceName} ${category}`.toLowerCase();
+
+                return (
+                  <div class='article-item' data-card data-haystack={haystack}>
+                    <ArticleCard
+                      title={article.title}
+                      excerpt={article.excerpt}
+                      href={articleHref(article.slug)}
+                      linkLabel={t.readArticle}
+                      publishedAt={formatDate(article.publishedAt)}
+                      imageSrc={article.imageUrl}
+                      category={category}
+                      source={article.sourceName}
+                      compact={true}
+                      imageUnavailableLabel={t.imageUnavailable}
+                    />
+                  </div>
+                );
+              })
             }
           </div>
         </section>
@@ -141,6 +182,47 @@ const homeHref = prefix || '/';
     )
   }
 </div>
+
+<script is:inline>
+  (() => {
+    const root = document.querySelector('[data-search-root]');
+    if (!root) return;
+
+    const input = root.querySelector('[data-search-input]');
+    const button = root.querySelector('[data-search-button]');
+    const cards = Array.from(root.querySelectorAll('[data-card]'));
+    const foundCount = root.querySelector('[data-found-count]');
+    const emptyState = root.querySelector('[data-search-empty]');
+
+    if (!input || !button || cards.length === 0 || !foundCount || !emptyState) return;
+
+    const normalize = (value) => value.toLowerCase().trim();
+
+    const applySearch = () => {
+      const query = normalize(input.value || '');
+      let visibleCount = 0;
+
+      for (const card of cards) {
+        const haystack = normalize(card.getAttribute('data-haystack') || '');
+        const matched = !query || haystack.includes(query);
+        card.hidden = !matched;
+        if (matched) visibleCount += 1;
+      }
+
+      foundCount.textContent = String(visibleCount);
+      emptyState.hidden = visibleCount !== 0;
+    };
+
+    input.addEventListener('input', applySearch);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applySearch();
+      }
+    });
+    button.addEventListener('click', applySearch);
+  })();
+</script>
 
 <style>
   .page-shell {
@@ -246,6 +328,18 @@ const homeHref = prefix || '/';
   .source-indicator strong {
     color: var(--text-primary);
     font-weight: 600;
+  }
+
+  .source-error {
+    margin: -0.2rem 0 0;
+    color: #fca5a5;
+    font-size: 0.82rem;
+  }
+
+  .search-empty {
+    margin: -0.2rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
   }
 
   .empty-state {

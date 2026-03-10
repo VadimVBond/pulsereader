@@ -45,6 +45,72 @@ export interface PipelineOptions {
   locale?: Locale;
 }
 
+interface PipelineCacheEntry {
+  expiresAt: number;
+  result: PipelineResult;
+}
+
+const PIPELINE_CACHE_TTL_MS = 5 * 60 * 1000;
+const PIPELINE_CACHE_MAX_ENTRIES = 40;
+const pipelineCache = new Map<string, PipelineCacheEntry>();
+
+function buildPipelineCacheKey(options: PipelineOptions): string {
+  const locale = options.locale ?? 'ru';
+  const limit = options.limit ?? 60;
+  const timeoutMs = options.timeoutMs ?? 9000;
+  const ids = [...(options.sourceIds ?? [])].sort().join(',');
+
+  return `${locale}|${limit}|${timeoutMs}|${ids}`;
+}
+
+function clonePipelineResult(input: PipelineResult): PipelineResult {
+  return {
+    ...input,
+    articles: input.articles.map((article) => ({
+      ...article,
+      publishedAt: article.publishedAt ? new Date(article.publishedAt) : undefined
+    })),
+    sources: input.sources.map((source) => ({
+      ...source,
+      feedUrls: source.feedUrls ? [...source.feedUrls] : undefined
+    })),
+    errors: input.errors.map((error) => ({ ...error })),
+    imageIssuesBySource: Object.fromEntries(
+      Object.entries(input.imageIssuesBySource).map(([sourceId, counters]) => [sourceId, { ...counters }])
+    )
+  };
+}
+
+function getCachedPipelineResult(cacheKey: string): PipelineResult | null {
+  const cached = pipelineCache.get(cacheKey);
+  if (!cached) return null;
+
+  if (cached.expiresAt <= Date.now()) {
+    pipelineCache.delete(cacheKey);
+    return null;
+  }
+
+  return clonePipelineResult(cached.result);
+}
+
+function setCachedPipelineResult(cacheKey: string, result: PipelineResult): void {
+  pipelineCache.set(cacheKey, {
+    expiresAt: Date.now() + PIPELINE_CACHE_TTL_MS,
+    result: clonePipelineResult(result)
+  });
+
+  if (pipelineCache.size <= PIPELINE_CACHE_MAX_ENTRIES) {
+    return;
+  }
+
+  for (const [key] of pipelineCache) {
+    pipelineCache.delete(key);
+    if (pipelineCache.size <= PIPELINE_CACHE_MAX_ENTRIES) {
+      break;
+    }
+  }
+}
+
 function shortHash(input: string): string {
   let hash = 0;
 
@@ -200,6 +266,13 @@ function logImageIssues(imageIssuesBySource: Record<string, ImageIssueCounters>)
 }
 
 export async function runNewsPipeline(options: PipelineOptions = {}): Promise<PipelineResult> {
+  const cacheKey = buildPipelineCacheKey(options);
+  const cached = getCachedPipelineResult(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
   const locale = options.locale ?? 'ru';
   const selectedSources = getNewsSources(options.sourceIds, locale);
   const feedResults = await fetchFeeds(selectedSources, {
@@ -237,7 +310,8 @@ export async function runNewsPipeline(options: PipelineOptions = {}): Promise<Pi
   const imageIssuesBySource = initImageIssuesBySource(selectedSources);
 
   const limit = options.limit ?? 60;
-  await enrichImages(dedupedAll, Math.min(120, limit * 2), imageIssuesBySource);
+  const maxImageEnrichment = Math.min(32, Math.max(10, limit));
+  await enrichImages(dedupedAll, maxImageEnrichment, imageIssuesBySource);
 
   const articles = dedupedAll.slice(0, limit);
 
@@ -248,7 +322,7 @@ export async function runNewsPipeline(options: PipelineOptions = {}): Promise<Pi
 
   logImageIssues(imageIssuesBySource);
 
-  return {
+  const result: PipelineResult = {
     articles,
     sources: selectedSources,
     totalFetched: feedResults.length,
@@ -261,6 +335,9 @@ export async function runNewsPipeline(options: PipelineOptions = {}): Promise<Pi
     errors,
     imageIssuesBySource
   };
+
+  setCachedPipelineResult(cacheKey, result);
+  return clonePipelineResult(result);
 }
 
 export async function getNewsArticles(options: PipelineOptions = {}): Promise<PipelineArticle[]> {

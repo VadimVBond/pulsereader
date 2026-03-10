@@ -46,6 +46,8 @@ export interface UiText {
   readArticle: string;
   noNewsTitle: string;
   noNewsText: string;
+  sourceUnavailable: string;
+  sourceUnavailableDetails: string;
   backHome: string;
   readOriginal: string;
   articleKicker: string;
@@ -74,6 +76,8 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
     readArticle: 'Read article',
     noNewsTitle: 'No RSS articles available right now',
     noNewsText: 'Try another source or refresh later.',
+    sourceUnavailable: 'Source is temporarily unavailable',
+    sourceUnavailableDetails: 'Error details',
     backHome: 'Back to home',
     readOriginal: 'Read original article',
     articleKicker: 'Article',
@@ -101,6 +105,8 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
     readArticle: 'Читати статтю',
     noNewsTitle: 'Зараз RSS-новини недоступні',
     noNewsText: 'Спробуйте інше джерело або оновіть сторінку пізніше.',
+    sourceUnavailable: 'Джерело тимчасово недоступне',
+    sourceUnavailableDetails: 'Деталі помилки',
     backHome: 'Назад на головну',
     readOriginal: 'Читати оригінал',
     articleKicker: 'Стаття',
@@ -128,6 +134,8 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
     readArticle: 'Читать статью',
     noNewsTitle: 'Сейчас RSS-новости недоступны',
     noNewsText: 'Попробуйте другой источник или обновите страницу позже.',
+    sourceUnavailable: 'Источник временно недоступен',
+    sourceUnavailableDetails: 'Детали ошибки',
     backHome: 'Назад на главную',
     readOriginal: 'Читать оригинал',
     articleKicker: 'Статья',

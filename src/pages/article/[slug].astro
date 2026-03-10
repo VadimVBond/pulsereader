@@ -3,10 +3,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import ThemeToggle from '../../components/ThemeToggle.astro';
 import LanguageSwitcher from '../../components/LanguageSwitcher.astro';
 import { runNewsPipeline, type PipelineArticle } from '../../news/pipeline';
-import { getUiText } from '../../i18n';
+import { getUiText, localePrefix } from '../../i18n';
 
 const locale = 'ru';
 const t = getUiText(locale);
+const homeHref = localePrefix(locale);
 
 export async function getStaticPaths() {
   const result = await runNewsPipeline({ limit: 120, locale: 'ru' });
@@ -28,7 +29,7 @@ const publishedAt = article.publishedAt
   : null;
 
 const navLinks = [
-  { label: t.navHome, href: '/' },
+  { label: t.navHome, href: homeHref },
   { label: t.navCategories, href: '#' },
   { label: t.navAbout, href: '#' },
   { label: t.navContact, href: '#' }
@@ -79,7 +80,7 @@ const navLinks = [
     </section>
 
     <p class='article-back'>
-      <a href='/'>{t.backHome}</a>
+      <a href={homeHref}>{t.backHome}</a>
     </p>
   </article>
 </BaseLayout>
@@ -277,6 +278,7 @@ const navLinks = [
     margin: 0.75rem 0 0;
   }
 </style>
+
 
 
 

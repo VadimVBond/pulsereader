@@ -5,10 +5,11 @@ import LanguageSwitcher from '../../components/LanguageSwitcher.astro';
 import NewsBoard from '../../components/NewsBoard.astro';
 import { runNewsPipeline } from '../../news/pipeline';
 import { getNewsSources } from '../../news/sources';
-import { getUiText } from '../../i18n';
+import { getUiText, localePrefix } from '../../i18n';
 
 const locale = 'ru';
 const t = getUiText(locale);
+const homeHref = localePrefix(locale);
 
 export function getStaticPaths() {
   return getNewsSources(undefined, 'ru').map((source) => ({
@@ -21,7 +22,7 @@ const { sourceId, sourceName } = Astro.props as { sourceId: string; sourceName: 
 const availableSources = getNewsSources(undefined, locale);
 const pipeline = await runNewsPipeline({ sourceIds: [sourceId], limit: 40, locale });
 const navLinks = [
-  { label: t.navHome, href: '/' },
+  { label: t.navHome, href: homeHref },
   { label: t.navCategories, href: '#' },
   { label: t.navAbout, href: '#' },
   { label: t.navContact, href: '#' }
@@ -51,4 +52,5 @@ const navLinks = [
     cursor: pointer;
   }
 </style>
+
 

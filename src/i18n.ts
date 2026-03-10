@@ -6,8 +6,27 @@ export function isLocale(value: string | undefined): value is Locale {
   return value === 'en' || value === 'uk' || value === 'ru';
 }
 
+export function withBasePath(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const baseUrl = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+
+  if (!baseUrl || baseUrl === '/') {
+    return normalizedPath;
+  }
+
+  if (normalizedPath === '/') {
+    return baseUrl;
+  }
+
+  return `${baseUrl}${normalizedPath}`;
+}
+
 export function localePrefix(locale: Locale): string {
-  return locale === 'ru' ? '' : `/${locale}`;
+  if (locale === 'ru') {
+    return withBasePath('/');
+  }
+
+  return withBasePath(`/${locale}`);
 }
 
 export interface UiText {
@@ -58,7 +77,8 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
     backHome: 'Back to home',
     readOriginal: 'Read original article',
     articleKicker: 'Article',
-    aggregatedNote: 'This article was aggregated from an external RSS source. Open the original page for full content and context.',
+    aggregatedNote:
+      'This article was aggregated from an external RSS source. Open the original page for full content and context.',
     langLabel: 'Language',
     imageUnavailable: 'Image unavailable from source',
     translateDescription: 'Translate description',
@@ -84,7 +104,8 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
     backHome: 'Назад на головну',
     readOriginal: 'Читати оригінал',
     articleKicker: 'Стаття',
-    aggregatedNote: 'Цю статтю агреговано із зовнішнього RSS-джерела. Відкрийте оригінал для повного контексту.',
+    aggregatedNote:
+      'Цю статтю агреговано із зовнішнього RSS-джерела. Відкрийте оригінал для повного контексту.',
     langLabel: 'Мова',
     imageUnavailable: 'Зображення недоступне у джерелі',
     translateDescription: 'Перекласти опис',
@@ -110,7 +131,8 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
     backHome: 'Назад на главную',
     readOriginal: 'Читать оригинал',
     articleKicker: 'Статья',
-    aggregatedNote: 'Эта статья агрегирована из внешнего RSS-источника. Откройте оригинал для полного контекста.',
+    aggregatedNote:
+      'Эта статья агрегирована из внешнего RSS-источника. Откройте оригинал для полного контекста.',
     langLabel: 'Язык',
     imageUnavailable: 'Изображение недоступно в источнике',
     translateDescription: 'Перевести описание',
@@ -121,5 +143,3 @@ export const UI_TEXT_BY_LOCALE: Record<Locale, UiText> = {
 export function getUiText(locale: Locale): UiText {
   return UI_TEXT_BY_LOCALE[locale];
 }
-
-
